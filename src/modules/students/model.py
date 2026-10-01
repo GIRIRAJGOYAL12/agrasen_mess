@@ -21,17 +21,6 @@ class Student(Base):
         nullable=False,
     )
 
-    roll_number: Mapped[str] = mapped_column(
-        String(50),
-        unique=True,
-        index=True,
-        nullable=False,
-    )
-
-    hostel_name: Mapped[str] = mapped_column(
-        String(100),
-        nullable=False,
-    )
 
     room_number: Mapped[str] = mapped_column(
         String(20),

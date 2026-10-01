@@ -1,4 +1,3 @@
-import json
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -179,8 +178,6 @@ def get_student_dashboard(
             "user_id": student.user_id,
             "name": student.user.name,
             "email": student.user.email,
-            "roll_number": student.roll_number,
-            "hostel_name": student.hostel_name,
             "room_number": student.room_number,
             "course": student.course,
             "year": student.year,

@@ -26,17 +26,7 @@ class StudentCreate(BaseModel):
 
     password: str = Field(
         min_length=8,
-        max_length=128,
-    )
-
-    roll_number: str = Field(
-        min_length=2,
-        max_length=50,
-    )
-
-    hostel_name: str = Field(
-        min_length=2,
-        max_length=100,
+        max_length=12,
     )
 
     room_number: str = Field(
@@ -57,15 +47,10 @@ class StudentCreate(BaseModel):
 
     photo_url: str | None = None
 
-    @field_validator("name", "hostel_name", "room_number")
+    @field_validator("name", "room_number")
     @classmethod
     def strip_required_strings(cls, value: str) -> str:
         return value.strip()
-
-    @field_validator("roll_number")
-    @classmethod
-    def normalize_roll_number(cls, value: str) -> str:
-        return value.strip().upper()
 
     @field_validator("phone_number", "course", "photo_url")
     @classmethod
@@ -83,8 +68,6 @@ class StudentCreate(BaseModel):
 class StudentResponse(BaseModel):
     id: int
     user_id: int
-    roll_number: str
-    hostel_name: str
     room_number: str
     course: str | None
     year: int | None

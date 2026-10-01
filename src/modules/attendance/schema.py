@@ -19,8 +19,8 @@ class AttendanceScanResponse(BaseModel):
     attendance_id: int
     student_id: int
     student_name: str
-    roll_number: str
-    photo_url: str | None
+    room_number: str
+    photo_url: str | None  
 
     meal_slot_id: int
     meal_type: MealType
@@ -35,8 +35,6 @@ class AttendanceHistoryResponse(BaseModel):
 
     student_id: int
     student_name: str
-    roll_number: str
-    hostel_name: str
     room_number: str
 
     meal_slot_id: int

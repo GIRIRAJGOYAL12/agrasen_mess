@@ -1,4 +1,4 @@
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from src.modules.students.model import Student
@@ -16,19 +16,6 @@ def get_student_by_id(
 
     return db.scalar(statement)
 
-
-def get_student_by_roll_number(
-    db: Session,
-    roll_number: str,
-) -> Student | None:
-    normalized_roll_number = roll_number.strip().upper()
-
-    statement = select(Student).where(
-        func.upper(Student.roll_number)
-        == normalized_roll_number
-    )
-
-    return db.scalar(statement)
 
 
 def get_students(

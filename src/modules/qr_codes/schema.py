@@ -16,7 +16,7 @@ class QRGenerateResponse(BaseModel):
     expires_in: int
 
     student_id: int
-    roll_number: str
+    
 
     meal_slot_id: int
     meal_type: MealType

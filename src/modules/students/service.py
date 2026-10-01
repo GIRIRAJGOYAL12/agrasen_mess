@@ -16,9 +16,7 @@ def create_student(
     student_data: StudentCreate,
 ) -> Student:
     normalized_email = str(student_data.email).strip().lower()
-    normalized_roll_number = (
-        student_data.roll_number.strip().upper()
-    )
+    
 
     existing_user = user_repository.get_user_by_email(
         db,
@@ -31,16 +29,7 @@ def create_student(
             detail="A user with this email already exists",
         )
 
-    existing_student = repository.get_student_by_roll_number(
-        db,
-        normalized_roll_number,
-    )
-
-    if existing_student is not None:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="A student with this roll number already exists",
-        )
+    
 
     user = User(
         name=student_data.name.strip(),
@@ -54,14 +43,12 @@ def create_student(
     )
 
     student = Student(
-        user=user,
-        roll_number=normalized_roll_number,
-        hostel_name=student_data.hostel_name,
-        room_number=student_data.room_number,
-        course=student_data.course,
-        year=student_data.year,
-        photo_url=student_data.photo_url,
-    )
+    user=user,
+    room_number=student_data.room_number,
+    course=student_data.course,
+    year=student_data.year,
+    photo_url=student_data.photo_url,
+)
 
     try:
         db.add(student)
@@ -73,9 +60,9 @@ def create_student(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=(
-                "Student could not be created because "
-                "email, phone number or roll number already exists"
-            ),
+    "Student could not be created because "
+    "email or phone number already exists"
+),
         ) from error
 
     created_student = repository.get_student_by_id(

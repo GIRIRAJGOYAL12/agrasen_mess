@@ -20,8 +20,6 @@ class DashboardStudentProfile(BaseModel):
     user_id: int
     name: str
     email: str
-    roll_number: str
-    hostel_name: str
     room_number: str
     course: str | None
     year: int | None

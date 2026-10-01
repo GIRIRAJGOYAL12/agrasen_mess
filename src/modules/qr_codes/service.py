@@ -1,4 +1,3 @@
-import hashlib
 import secrets
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
@@ -126,7 +125,6 @@ def generate_qr_token(
         "expires_at": expires_at,
         "expires_in": settings.qr_expiry_seconds,
         "student_id": student.id,
-        "roll_number": student.roll_number,
         "meal_slot_id": meal.id,
         "meal_type": meal.meal_type,
         "meal_date": current_date,

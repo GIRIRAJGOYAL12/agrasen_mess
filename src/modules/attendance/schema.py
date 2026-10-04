@@ -44,3 +44,29 @@ class AttendanceHistoryResponse(BaseModel):
     scanned_at: datetime
     scanner_name: str | None
     entry_method: EntryMethod
+
+
+class MealAttendanceStatus(BaseModel):
+    status: str
+    attended_at: datetime | None = None
+
+
+class DailyAttendanceResponse(BaseModel):
+    date: date
+    breakfast: MealAttendanceStatus
+    lunch: MealAttendanceStatus
+    dinner: MealAttendanceStatus
+
+
+class MonthlyAttendanceSummary(BaseModel):
+    breakfast: int
+    lunch: int
+    dinner: int
+
+
+class MonthlyAttendanceResponse(BaseModel):
+    year: int
+    month: int
+    total_days: int
+    summary: MonthlyAttendanceSummary
+    days: list[DailyAttendanceResponse]

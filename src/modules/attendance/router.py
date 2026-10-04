@@ -10,6 +10,7 @@ from src.modules.attendance import service
 from src.modules.attendance.schema import (
     AttendanceHistoryResponse,
     AttendanceScanResponse,
+    MonthlyAttendanceResponse,
     QRScanRequest,
 )
 from src.modules.auth.dependencies import require_roles
@@ -60,19 +61,19 @@ def scan_student_qr(
 
 @router.get(
     "/me",
-    response_model=list[AttendanceHistoryResponse],
+    response_model=MonthlyAttendanceResponse,
 )
 def get_my_attendance(
     db: DatabaseSession,
     current_student: StudentUser,
-    skip: Annotated[int, Query(ge=0)] = 0,
-    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    year: Annotated[int, Query(ge=2000, le=2100)],
+    month: Annotated[int, Query(ge=1, le=12)],
 ):
     return service.get_student_history(
         db,
         current_student,
-        skip,
-        limit,
+        year,
+        month,
     )
 
 

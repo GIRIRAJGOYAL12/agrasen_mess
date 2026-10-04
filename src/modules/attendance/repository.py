@@ -1,6 +1,6 @@
 from datetime import date
 
-from sqlalchemy import select
+from sqlalchemy import extract, select
 from sqlalchemy.orm import Session, selectinload
 
 from src.modules.attendance.model import MealAttendance
@@ -77,5 +77,29 @@ def get_attendance_records(
         )
 
     statement = statement.offset(skip).limit(limit)
+
+    return list(db.scalars(statement).all())
+
+def get_student_monthly_attendance(
+    db: Session,
+    student_id: int,
+    year: int,
+    month: int,
+) -> list[MealAttendance]:
+    statement = (
+        select(MealAttendance)
+        .options(
+            selectinload(MealAttendance.meal_slot),
+        )
+        .where(
+            MealAttendance.student_id == student_id,
+            extract("year", MealAttendance.meal_date) == year,
+            extract("month", MealAttendance.meal_date) == month,
+        )
+        .order_by(
+            MealAttendance.meal_date.asc(),
+            MealAttendance.scanned_at.asc(),
+        )
+    )
 
     return list(db.scalars(statement).all())

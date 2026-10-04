@@ -1,11 +1,12 @@
-from datetime import datetime, timezone
+import calendar
+from datetime import date, datetime, timezone
 from zoneinfo import ZoneInfo
 
 from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from src.common.enums import EntryMethod
+from src.common.enums import EntryMethod, MealType
 from src.core.config import settings
 from src.modules.attendance import repository
 from src.modules.attendance.model import MealAttendance
@@ -192,9 +193,9 @@ def serialize_attendance(
 def get_student_history(
     db: Session,
     current_user: User,
-    skip: int,
-    limit: int,
-) -> list[dict]:
+    year: int,
+    month: int,
+) -> dict:
     student = student_repository.get_student_by_user_id(
         db,
         current_user.id,
@@ -206,17 +207,133 @@ def get_student_history(
             detail="Student profile not found",
         )
 
-    records = repository.get_attendance_records(
+    records = repository.get_student_monthly_attendance(
         db,
         student_id=student.id,
-        skip=skip,
-        limit=limit,
+        year=year,
+        month=month,
     )
 
-    return [
-        serialize_attendance(record)
-        for record in records
+    meal_slots = meal_repository.get_meals(
+        db,
+        active_only=False,
+    )
+
+    meal_slot_by_type = {
+        meal.meal_type: meal
+        for meal in meal_slots
+    }
+
+    attendance_by_day_and_type = {}
+
+    for record in records:
+        attendance_by_day_and_type[
+            (
+                record.meal_date,
+                record.meal_slot.meal_type,
+            )
+        ] = record
+
+    local_now = datetime.now(
+        ZoneInfo(settings.app_timezone)
+    )
+
+    today = local_now.date()
+
+    total_days = calendar.monthrange(
+        year,
+        month,
+    )[1]
+
+    summary = {
+        "breakfast": 0,
+        "lunch": 0,
+        "dinner": 0,
+    }
+
+    days = []
+
+    meal_types = [
+        MealType.BREAKFAST,
+        MealType.LUNCH,
+        MealType.DINNER,
     ]
+
+    for day_number in range(1, total_days + 1):
+        current_date = date(
+            year,
+            month,
+            day_number,
+        )
+
+        day_data = {
+            "date": current_date,
+        }
+
+        for meal_type in meal_types:
+            meal_key = meal_type.value
+
+            meal_slot = meal_slot_by_type.get(
+                meal_type
+            )
+
+            attendance = (
+                attendance_by_day_and_type.get(
+                    (
+                        current_date,
+                        meal_type,
+                    )
+                )
+            )
+
+            if attendance is not None:
+                meal_status = "attended"
+                attended_at = attendance.scanned_at
+
+                summary[meal_key] += 1
+
+            elif meal_slot is None or not meal_slot.is_active:
+                meal_status = "unavailable"
+                attended_at = None
+
+            elif current_date > today:
+                meal_status = "upcoming"
+                attended_at = None
+
+            elif current_date < today:
+                meal_status = "missed"
+                attended_at = None
+
+            else:
+                current_time = (
+                    local_now.time().replace(
+                        tzinfo=None
+                    )
+                )
+
+                if current_time > meal_slot.end_time:
+                    meal_status = "missed"
+                else:
+                    meal_status = "upcoming"
+
+                attended_at = None
+
+            day_data[meal_key] = {
+                "status": meal_status,
+                "attended_at": attended_at,
+            }
+
+        days.append(day_data)
+
+    days.reverse()
+
+    return {
+        "year": year,
+        "month": month,
+        "total_days": total_days,
+        "summary": summary,
+        "days": days,
+    }
 
 
 def get_attendance_report(

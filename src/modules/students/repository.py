@@ -1,7 +1,9 @@
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import Session
 
 from src.modules.students.model import Student
+from src.modules.users.model import User
 
 
 def get_student_by_id(
@@ -44,3 +46,23 @@ def get_student_by_user_id(
     )
 
     return db.scalar(statement)
+
+def count_active_students(
+    db: Session,
+) -> int:
+    statement = (
+        select(
+            func.count(Student.id)
+        )
+        .join(
+            User,
+            User.id == Student.user_id,
+        )
+        .where(
+            User.is_active.is_(True),
+        )
+    )
+
+    return int(
+        db.scalar(statement) or 0
+    )

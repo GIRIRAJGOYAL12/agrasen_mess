@@ -357,3 +357,203 @@ def get_attendance_report(
         serialize_attendance(record)
         for record in records
     ]
+
+def get_admin_monthly_summary(
+    db: Session,
+    year: int,
+    month: int,
+) -> dict:
+    local_now = datetime.now(
+        ZoneInfo(settings.app_timezone)
+    )
+
+    today = local_now.date()
+
+    month_start = date(
+        year,
+        month,
+        1,
+    )
+
+    last_day = calendar.monthrange(
+        year,
+        month,
+    )[1]
+
+    month_end = date(
+        year,
+        month,
+        last_day,
+    )
+
+    # ---------------------------------------------------------
+    # Do not calculate future attendance.
+    # ---------------------------------------------------------
+
+    if year == today.year and month == today.month:
+        through_date = today
+
+    elif (year, month) < (today.year, today.month):
+        through_date = month_end
+
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Future month attendance is not available",
+        )
+
+    # ---------------------------------------------------------
+    # TOTAL ACTIVE STUDENTS
+    # ---------------------------------------------------------
+
+    total_students = (
+        student_repository.count_active_students(
+            db
+        )
+    )
+
+    # ---------------------------------------------------------
+    # DAILY MEAL COUNTS
+    # ---------------------------------------------------------
+
+    daily_rows = (
+        repository.get_daily_meal_counts(
+            db,
+            attendance_date=through_date,
+        )
+    )
+
+    daily_counts = {
+        "breakfast": 0,
+        "lunch": 0,
+        "dinner": 0,
+    }
+
+    for meal_type, count in daily_rows:
+        daily_counts[
+            meal_type.value
+        ] = int(count)
+
+    # ---------------------------------------------------------
+    # MONTHLY MEAL COUNTS
+    # ---------------------------------------------------------
+
+    monthly_rows = (
+        repository.get_monthly_meal_counts(
+            db,
+            start_date=month_start,
+            end_date=through_date,
+        )
+    )
+
+    monthly_counts = {
+        "breakfast": 0,
+        "lunch": 0,
+        "dinner": 0,
+    }
+
+    for meal_type, count in monthly_rows:
+        monthly_counts[
+            meal_type.value
+        ] = int(count)
+
+    # ---------------------------------------------------------
+    # DAILY COUPON COUNTS
+    # ---------------------------------------------------------
+
+    coupon_rows = (
+        repository.get_daily_coupon_counts(
+            db,
+            start_date=month_start,
+            end_date=through_date,
+        )
+    )
+
+    coupon_by_date = {
+        coupon_date: int(count)
+        for coupon_date, count in coupon_rows
+    }
+
+    # Include zero-attendance dates as well.
+    daily_coupon_counts = []
+
+    current_date = month_start
+
+    while current_date <= through_date:
+        daily_coupon_counts.append(
+            {
+                "date": current_date,
+                "count": coupon_by_date.get(
+                    current_date,
+                    0,
+                ),
+            }
+        )
+
+        current_date = date.fromordinal(
+            current_date.toordinal() + 1
+        )
+
+    # ---------------------------------------------------------
+    # MONTHLY COUPON TOTAL
+    #
+    # Each student contributes max 1 coupon per date.
+    # ---------------------------------------------------------
+
+    total_coupon_count = sum(
+        item["count"]
+        for item in daily_coupon_counts
+    )
+
+    daily_coupon_count = (
+        coupon_by_date.get(
+            through_date,
+            0,
+        )
+    )
+
+    # ---------------------------------------------------------
+    # RESPONSE
+    # ---------------------------------------------------------
+
+    return {
+        "year": year,
+        "month": month,
+        "through_date": through_date,
+
+        "total_students": total_students,
+
+        "daily_summary": {
+            "date": through_date,
+            "total_students": total_students,
+            "breakfast": daily_counts[
+                "breakfast"
+            ],
+            "lunch": daily_counts[
+                "lunch"
+            ],
+            "dinner": daily_counts[
+                "dinner"
+            ],
+            "coupon_count":
+                daily_coupon_count,
+        },
+
+        "monthly_summary": {
+            "breakfast": monthly_counts[
+                "breakfast"
+            ],
+            "lunch": monthly_counts[
+                "lunch"
+            ],
+            "dinner": monthly_counts[
+                "dinner"
+            ],
+        },
+
+        "total_coupon_count":
+            total_coupon_count,
+
+        "daily_coupon_counts":
+            daily_coupon_counts,
+    }

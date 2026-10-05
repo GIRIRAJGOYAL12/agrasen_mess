@@ -70,3 +70,47 @@ class MonthlyAttendanceResponse(BaseModel):
     total_days: int
     summary: MonthlyAttendanceSummary
     days: list[DailyAttendanceResponse]
+
+
+class AdminMealCount(BaseModel):
+    breakfast: int = 0
+    lunch: int = 0
+    dinner: int = 0
+
+
+class AdminDailyMealSummary(BaseModel):
+    date: date
+    total_students: int
+
+    breakfast: int = 0
+    lunch: int = 0
+    dinner: int = 0
+
+    coupon_count: int = 0
+
+
+class DailyCouponCount(BaseModel):
+    date: date
+    count: int
+
+
+class AdminMonthlyAttendanceResponse(BaseModel):
+    year: int
+    month: int
+
+    # Last date included in calculations.
+    through_date: date
+
+    total_students: int
+
+    # Attendance for through_date.
+    daily_summary: AdminDailyMealSummary
+
+    # Total meal scans from month start through through_date.
+    monthly_summary: AdminMealCount
+
+    # Unique student-days where at least one meal was attended.
+    total_coupon_count: int
+
+    # Coupon count for each date.
+    daily_coupon_counts: list[DailyCouponCount]

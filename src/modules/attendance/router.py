@@ -8,6 +8,7 @@ from src.common.enums import UserRole
 from src.database.dependencies import get_db
 from src.modules.attendance import service
 from src.modules.attendance.schema import (
+    AdminMonthlyAttendanceResponse,
     AttendanceHistoryResponse,
     AttendanceScanResponse,
     MonthlyAttendanceResponse,
@@ -74,6 +75,28 @@ def get_my_attendance(
         current_student,
         year,
         month,
+    )
+
+@router.get(
+    "/summary",
+    response_model=AdminMonthlyAttendanceResponse,
+)
+def get_admin_attendance_summary(
+    db: DatabaseSession,
+    staff_or_admin: ScannerUser,
+    year: Annotated[
+        int,
+        Query(ge=2000, le=2100),
+    ],
+    month: Annotated[
+        int,
+        Query(ge=1, le=12),
+    ],
+):
+    return service.get_admin_monthly_summary(
+        db=db,
+        year=year,
+        month=month,
     )
 
 

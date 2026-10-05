@@ -2,10 +2,11 @@ from datetime import date
 
 from sqlalchemy import extract, select
 from sqlalchemy.orm import Session, selectinload
-
 from src.modules.attendance.model import MealAttendance
 from src.modules.students.model import Student
-
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session
+from src.modules.meals.model import MealSlot
 
 def get_student_meal_attendance(
     db: Session,
@@ -103,3 +104,96 @@ def get_student_monthly_attendance(
     )
 
     return list(db.scalars(statement).all())
+
+def get_monthly_meal_counts(
+    db: Session,
+    start_date: date,
+    end_date: date,
+):
+    statement = (
+        select(
+            MealSlot.meal_type,
+            func.count(MealAttendance.id),
+        )
+        .join(
+            MealSlot,
+            MealSlot.id == MealAttendance.meal_slot_id,
+        )
+        .where(
+            MealAttendance.meal_date >= start_date,
+            MealAttendance.meal_date <= end_date,
+        )
+        .group_by(MealSlot.meal_type)
+    )
+
+    return db.execute(statement).all()
+
+
+def get_daily_meal_counts(
+    db: Session,
+    attendance_date: date,
+):
+    statement = (
+        select(
+            MealSlot.meal_type,
+            func.count(MealAttendance.id),
+        )
+        .join(
+            MealSlot,
+            MealSlot.id == MealAttendance.meal_slot_id,
+        )
+        .where(
+            MealAttendance.meal_date == attendance_date,
+        )
+        .group_by(MealSlot.meal_type)
+    )
+
+    return db.execute(statement).all()
+
+
+def get_daily_coupon_counts(
+    db: Session,
+    start_date: date,
+    end_date: date,
+):
+    statement = (
+        select(
+            MealAttendance.meal_date,
+            func.count(
+                func.distinct(
+                    MealAttendance.student_id
+                )
+            ),
+        )
+        .where(
+            MealAttendance.meal_date >= start_date,
+            MealAttendance.meal_date <= end_date,
+        )
+        .group_by(
+            MealAttendance.meal_date,
+        )
+        .order_by(
+            MealAttendance.meal_date,
+        )
+    )
+
+    return db.execute(statement).all()
+
+
+def get_coupon_count_for_date(
+    db: Session,
+    attendance_date: date,
+) -> int:
+    statement = select(
+        func.count(
+            func.distinct(
+                MealAttendance.student_id
+            )
+        )
+    ).where(
+        MealAttendance.meal_date == attendance_date,
+    )
+
+    return int(
+        db.scalar(statement) or 0
+    )

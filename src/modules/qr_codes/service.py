@@ -96,11 +96,13 @@ def generate_qr_token(
     plain_token = secrets.token_urlsafe(32)
     token_hash = hash_qr_token(plain_token)
 
+    server_time = datetime.now(timezone.utc)
+
     expires_at = (
-        datetime.now(timezone.utc)
-        + timedelta(
-            seconds=settings.qr_expiry_seconds
-        )
+    server_time
+         + timedelta(
+         seconds=settings.qr_expiry_seconds
+         )
     )
 
     repository.remove_previous_unused_tokens(
@@ -120,12 +122,13 @@ def generate_qr_token(
     )
 
     return {
-        "token": plain_token,
-        "token_type": "meal_qr",
-        "expires_at": expires_at,
-        "expires_in": settings.qr_expiry_seconds,
-        "student_id": student.id,
-        "meal_slot_id": meal.id,
-        "meal_type": meal.meal_type,
-        "meal_date": current_date,
-    }
+    "token": plain_token,
+    "token_type": "meal_qr",
+    "expires_at": expires_at,
+    "server_time": server_time,
+    "expires_in": settings.qr_expiry_seconds,
+    "student_id": student.id,
+    "meal_slot_id": meal.id,
+    "meal_type": meal.meal_type,
+    "meal_date": current_date,
+}

@@ -12,12 +12,12 @@ class QRGenerateRequest(BaseModel):
 class QRGenerateResponse(BaseModel):
     token: str
     token_type: str = "meal_qr"
+
     expires_at: datetime
+    server_time: datetime
     expires_in: int
 
     student_id: int
-    
-
     meal_slot_id: int
     meal_type: MealType
     meal_date: date

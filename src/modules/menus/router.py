@@ -33,9 +33,14 @@ DatabaseSession = Annotated[
     Depends(get_db),
 ]
 
-AdminUser = Annotated[
+MenuManagerUser = Annotated[
     User,
-    Depends(require_roles(UserRole.ADMIN)),
+    Depends(
+        require_roles(
+            UserRole.ADMIN,
+            UserRole.STAFF,
+        )
+    ),
 ]
 
 
@@ -47,7 +52,7 @@ AdminUser = Annotated[
 def create_menu(
     payload: MenuCreate,
     db: DatabaseSession,
-    admin_user: AdminUser,
+    menu_manager: MenuManagerUser,
 ) -> MenuResponse:
     return service.create_menu(
         db=db,
@@ -132,7 +137,7 @@ def update_menu(
     menu_id: int,
     payload: MenuUpdate,
     db: DatabaseSession,
-    admin_user: AdminUser,
+    menu_manager: MenuManagerUser,
 ) -> MenuResponse:
     return service.update_menu(
         db=db,

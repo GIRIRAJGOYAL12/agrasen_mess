@@ -9,6 +9,7 @@ from src.modules.auth.dependencies import require_roles
 from src.modules.students import service
 from src.modules.students.schema import (
     StudentCreate,
+    StudentUpdate,
     StudentResponse,
 )
 from src.modules.users.model import User
@@ -91,4 +92,20 @@ def update_student_status(
         db,
         student_id,
         payload.is_active,
+    )
+
+@router.patch(
+    "/{student_id}",
+    response_model=StudentResponse,
+)
+def edit_student_details(
+    student_id: int,
+    payload: StudentUpdate,
+    db: DatabaseSession,
+    admin_user: AdminUser,
+):
+    return service.update_student(
+        db,
+        student_id,
+        payload,
     )

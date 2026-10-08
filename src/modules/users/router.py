@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -11,6 +11,7 @@ from src.modules.users import service
 from src.modules.users.schema import (
     AccountStatusUpdate,
     StaffCreate,
+    StaffUpdate,
     UserResponse,
 )
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -87,3 +88,19 @@ def update_staff_status(
     db.refresh(staff_user)
 
     return staff_user
+
+@router.patch(
+    "/staff/{user_id}",
+    response_model=UserResponse,
+)
+def edit_staff_details(
+    user_id: int,
+    payload: StaffUpdate,
+    db: DatabaseSession,
+    admin_user: AdminUser,
+):
+    return service.update_staff(
+        db,
+        user_id,
+        payload,
+    )

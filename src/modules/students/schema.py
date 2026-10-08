@@ -63,7 +63,62 @@ class StudentCreate(BaseModel):
 
         stripped_value = value.strip()
         return stripped_value or None
+class StudentUpdate(BaseModel):
+    name: str | None = Field(
+        default=None,
+        min_length=2,
+        max_length=100,
+    )
 
+    email: EmailStr | None = None
+
+    phone_number: str | None = Field(
+        default=None,
+        max_length=20,
+    )
+
+    room_number: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=20,
+    )
+
+    @field_validator("name", "room_number")
+    @classmethod
+    def clean_required_fields(
+        cls,
+        value: str | None,
+    ) -> str | None:
+        if value is None:
+            return None
+
+        value = value.strip()
+
+        if not value:
+            raise ValueError("Field cannot be empty")
+
+        return value
+
+    @field_validator("phone_number")
+    @classmethod
+    def clean_phone_number(
+        cls,
+        value: str | None,
+    ) -> str | None:
+        if value is None:
+            return None
+
+        value = value.strip()
+
+        if not value:
+            return None
+
+        if not value.isdigit() or len(value) != 10:
+            raise ValueError(
+                "Mobile number must contain exactly 10 digits"
+            )
+
+        return value
 
 class StudentResponse(BaseModel):
     id: int

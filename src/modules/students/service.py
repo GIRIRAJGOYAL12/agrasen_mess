@@ -6,7 +6,7 @@ from src.common.enums import UserRole
 from src.core.security import hash_password
 from src.modules.students import repository
 from src.modules.students.model import Student
-from src.modules.students.schema import StudentCreate
+from src.modules.students.schema import StudentCreate, StudentUpdate
 from src.modules.users import repository as user_repository
 from src.modules.users.model import User
 
@@ -118,5 +118,84 @@ def update_student_status(
     student.user.is_active = is_active
     db.commit()
     db.refresh(student)
+
+    return get_student(db, student_id)
+
+def update_student(
+    db: Session,
+    student_id: int,
+    student_data: StudentUpdate,
+) -> Student:
+
+    student = get_student(db, student_id)
+
+    update_data = student_data.model_dump(
+        exclude_unset=True
+    )
+
+    for field in ("name", "email", "room_number"):
+        if field in update_data and update_data[field] is None:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"{field} cannot be null",
+            )
+
+    if "name" in update_data:
+        student.user.name = update_data["name"]
+
+    if "email" in update_data:
+        new_email = str(
+            update_data["email"]
+        ).strip().lower()
+
+        existing_user = user_repository.get_user_by_email(
+            db,
+            new_email,
+        )
+
+        if (
+            existing_user is not None
+            and existing_user.id != student.user_id
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Email already exists",
+            )
+
+        student.user.email = new_email
+
+    if "phone_number" in update_data:
+        new_phone = update_data["phone_number"]
+
+        if new_phone:
+            existing_phone = user_repository.get_user_by_phone(
+                db,
+                new_phone,
+            )
+
+            if (
+                existing_phone is not None
+                and existing_phone.id != student.user_id
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Mobile number already exists",
+                )
+
+        student.user.phone_number = new_phone
+
+    if "room_number" in update_data:
+        student.room_number = update_data["room_number"]
+
+    try:
+        db.commit()
+
+    except IntegrityError as error:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Email or mobile number already exists",
+        ) from error
 
     return get_student(db, student_id)

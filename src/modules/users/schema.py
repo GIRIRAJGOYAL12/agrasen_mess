@@ -51,4 +51,53 @@ class StaffCreate(BaseModel):
         value = value.strip()
         return value or None
 
+class StaffUpdate(BaseModel):
+    name: str | None = Field(
+        default=None,
+        min_length=2,
+        max_length=100,
+    )
+
+    email: EmailStr | None = None
+
+    phone_number: str | None = Field(
+        default=None,
+        max_length=20,
+    )
+
+    @field_validator("name")
+    @classmethod
+    def clean_name(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+
+        value = value.strip()
+
+        if len(value) < 2:
+            raise ValueError(
+                "Name must contain at least 2 characters"
+            )
+
+        return value
+
+    @field_validator("phone_number")
+    @classmethod
+    def clean_phone_number(
+        cls,
+        value: str | None,
+    ) -> str | None:
+        if value is None:
+            return None
+
+        value = value.strip()
+
+        if not value:
+            return None
+
+        if not value.isdigit() or len(value) != 10:
+            raise ValueError(
+                "Mobile number must contain exactly 10 digits"
+            )
+
+        return value
     
